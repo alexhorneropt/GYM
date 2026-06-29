@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f0f">
+<title>Gym Tracker</title>
+<style>
+:root{--bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;--border:#2e2e2e;--border2:#3a3a3a;--text:#f0f0f0;--text2:#888;--text3:#555;--accent:#c8f064;--accent-dim:rgba(200,240,100,0.12);--accent-text:#8ab82e;--danger:#ff5555;--danger-dim:rgba(255,85,85,0.1);--success:#4cd97b;--warning:#ffa940;--warning-dim:rgba(255,169,64,0.1);--radius:10px;--radius-lg:16px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;overscroll-behavior:none}
+.app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto}
+.content{flex:1;overflow-y:auto;padding:1rem;padding-bottom:6rem}
+.page{display:none}.page.active{display:block}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 8px;cursor:pointer;color:var(--text3);font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;border:none;background:none;transition:color 0.15s}
+.nav-item.active{color:var(--accent)}
+.nav-icon{font-size:22px;line-height:1}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-top:.25rem}
+.page-title{font-size:22px;font-weight:700;letter-spacing:-.03em}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
+.btn-ghost{background:var(--surface2);color:var(--text2)}.btn-ghost:active{opacity:.7}
+.btn-accent{background:var(--accent);color:#1a1a00}.btn-accent:active{transform:scale(.97)}
+.btn-danger{background:var(--danger-dim);color:var(--danger)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+.btn-icon{background:none;border:none;cursor:pointer;color:var(--text3);padding:6px;border-radius:8px;font-size:18px;display:flex;align-items:center;justify-content:center}
+.btn-icon:active{background:var(--surface2)}
+.section-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:1.25rem 0 .5rem}
+.section-label:first-child{margin-top:0}
+.session-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:.5rem;margin-bottom:1rem;scrollbar-width:none}
+.session-scroll::-webkit-scrollbar{display:none}
+.session-chip{flex-shrink:0;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);transition:all 0.15s;white-space:nowrap}
+.session-chip.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.session-edit-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:4px;border-radius:6px;opacity:.6;transition:opacity .15s;flex-shrink:0}
+.session-edit-btn:active{opacity:1}
+.active-banner{background:var(--accent-dim);border:1px solid var(--accent-text);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.active-banner-info{font-size:12px;color:var(--accent-text);font-weight:600}
+.active-banner-time{font-size:20px;font-weight:800;color:var(--accent);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.last-ref{background:var(--surface2);border-radius:var(--radius);padding:10px 14px;margin-bottom:.75rem;border-left:3px solid var(--border2)}
+.last-ref-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.last-ref-content{font-size:12px;color:var(--text2);line-height:1.6}
+.exer-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:.75rem;overflow:hidden}
+.exer-header{display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--surface2)}
+.exer-title{flex:1;font-size:14px;font-weight:600;letter-spacing:-.01em;cursor:pointer}
+.exer-title:active{color:var(--accent)}
+.swap-btn{font-size:11px;font-weight:600;background:var(--warning-dim);color:var(--warning);border:none;border-radius:6px;padding:4px 8px;cursor:pointer}
+.series-table{width:100%;border-collapse:collapse}
+.series-table th{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:8px 14px 6px;text-align:left;background:var(--surface);border-bottom:1px solid var(--border)}
+.series-table td{padding:10px 14px;font-size:14px;border-bottom:1px solid var(--border)}
+.series-table tr:last-child td{border-bottom:none}
+.serie-num{color:var(--text3);font-size:12px;width:28px}
+.serie-peso{font-weight:700;font-size:15px}
+.serie-reps{color:var(--text2);font-size:13px}
+.serie-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;letter-spacing:.04em}
+.badge-pr{background:var(--accent-dim);color:var(--accent-text)}
+.badge-eq{background:var(--surface2);color:var(--text3)}
+.badge-down{background:var(--danger-dim);color:var(--danger)}
+.ref-row td{padding:6px 14px;font-size:12px;color:var(--text3);background:var(--surface);border-bottom:1px dashed var(--border);font-style:italic}
+.add-serie-wrap{padding:10px 14px;background:var(--surface);border-top:1px solid var(--border)}
+.add-serie-form{display:flex;gap:8px;align-items:center}
+.add-serie-form input{flex:1;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-size:14px;font-weight:600;min-width:0}
+.add-serie-form input:focus{outline:none;border-color:var(--accent)}
+.add-serie-form input::placeholder{color:var(--text3);font-weight:400}
+.last-hint{font-size:11px;color:var(--text3);margin-top:6px}
+.last-hint strong{color:var(--text2)}
+.finish-btn{width:100%;padding:16px;border-radius:var(--radius-lg);border:none;background:var(--accent);color:#1a1a00;font-size:16px;font-weight:800;cursor:pointer;margin-top:1rem;letter-spacing:-.01em;transition:all 0.15s}
+.finish-btn:active{transform:scale(.98);opacity:.9}
+.add-exer-btn{width:100%;padding:12px;border-radius:var(--radius);border:1.5px dashed var(--border2);background:none;color:var(--text3);font-size:13px;font-weight:500;cursor:pointer;margin-top:.5rem;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.add-exer-btn:active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.25rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center}
+.stat-val{font-size:22px;font-weight:800;color:var(--accent);letter-spacing:-.03em}
+.stat-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3)}
+.empty-icon{font-size:40px;display:block;margin-bottom:.75rem}
+.empty p{font-size:13px;line-height:1.5}
+.search-wrap{margin-bottom:1rem}
+.search-input{width:100%;padding:11px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:14px}
+.search-input:focus{outline:none;border-color:var(--accent)}
+.search-input::placeholder{color:var(--text3)}
+.hist-session-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:.75rem;overflow:hidden}
+.hse-header{padding:12px 14px;background:var(--surface2);display:flex;align-items:center;justify-content:space-between}
+.hse-date{font-size:13px;font-weight:700}
+.hse-session{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.hse-stats{display:flex;gap:12px;font-size:11px;color:var(--text2);padding:10px 14px;border-bottom:1px solid var(--border)}
+.hse-stat strong{color:var(--text);font-weight:700}
+.hse-exercises{padding:10px 14px}
+.hse-exer{margin-bottom:8px}.hse-exer:last-child{margin-bottom:0}
+.hse-exer-name{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:3px}
+.hse-series{display:flex;gap:6px;flex-wrap:wrap}
+.hse-serie{font-size:11px;background:var(--surface2);border-radius:6px;padding:3px 8px;color:var(--text)}
+.exer-list-item{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:8px}
+.exer-list-item:last-child{border-bottom:none}
+.exer-list-name{flex:1;font-size:13px}
+/* TRAINER PANEL */
+.client-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:.75rem}
+.client-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
+.client-name{font-size:16px;font-weight:700}
+.client-url{font-size:11px;color:var(--text3);background:var(--surface2);padding:6px 10px;border-radius:8px;margin-bottom:.75rem;word-break:break-all;cursor:pointer}
+.client-url:active{background:var(--border2)}
+.client-sessions{display:flex;gap:6px;flex-wrap:wrap}
+.client-session-tag{font-size:11px;background:var(--surface2);border-radius:6px;padding:3px 8px;color:var(--text2)}
+/* SELECTOR SCREEN */
+.selector-screen{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.selector-logo{font-size:48px;margin-bottom:1rem}
+.selector-title{font-size:26px;font-weight:800;letter-spacing:-.03em;margin-bottom:.5rem;text-align:center}
+.selector-subtitle{font-size:13px;color:var(--text3);text-align:center;margin-bottom:2rem}
+.selector-input{width:100%;max-width:360px;padding:14px 16px;border-radius:var(--radius-lg);border:1.5px solid var(--border2);background:var(--surface);color:var(--text);font-size:16px;margin-bottom:1rem}
+.selector-input:focus{outline:none;border-color:var(--accent)}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0))}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 1.25rem}
+.modal h3{font-size:18px;font-weight:700;letter-spacing:-.02em;margin-bottom:1rem}
+.modal label{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;margin-top:1rem}
+.modal label:first-of-type{margin-top:0}
+.modal input,.modal select,.modal textarea{width:100%;padding:12px 14px;border-radius:var(--radius);border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-size:15px;font-family:inherit}
+.modal textarea{min-height:100px;resize:vertical;font-size:13px}
+.modal input:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;margin-top:1.25rem}
+.modal-actions .btn{flex:1;justify-content:center;padding:13px;font-size:14px}
+.confirm-box{background:var(--surface2);border-radius:var(--radius);padding:14px;margin-bottom:1rem;font-size:13px;color:var(--text2);line-height:1.6}
+.confirm-box strong{color:var(--text)}
+.tag-badge{font-size:11px;background:var(--accent-dim);color:var(--accent-text);padding:3px 8px;border-radius:6px;font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- SELECTOR SCREEN (shown when no client in URL) -->
+<div class="selector-screen" id="selector-screen" style="display:none">
+  <div class="selector-logo">🏋️</div>
+  <div class="selector-title">Gym Tracker</div>
+  <div class="selector-subtitle" id="selector-subtitle">Introduce tu nombre de usuario</div>
+  <input class="selector-input" type="text" id="selector-input" placeholder="Ej: maria" autocomplete="off" autocapitalize="off">
+  <button class="btn btn-accent" style="width:100%;max-width:360px;justify-content:center;padding:14px;font-size:15px" onclick="goToClient()">Entrar →</button>
+  <p style="font-size:11px;color:var(--text3);margin-top:1.5rem;text-align:center">O pide a tu entrenador el enlace directo</p>
+</div>
+
+<div class="app" id="main-app" style="display:none">
+  <div class="content">
+    <!-- SESIONES -->
+    <div id="page-sesiones" class="page active">
+      <div class="page-header">
+        <div>
+          <div class="page-title" id="client-greeting">Entrenamiento</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px" id="client-label"></div>
+        </div>
+        <div id="trainer-badge" style="display:none">
+          <span class="tag-badge">👤 Entrenador</span>
+        </div>
+      </div>
+      <p class="section-label">Sesión</p>
+      <div class="session-scroll" id="session-scroll"></div>
+      <div id="active-banner" style="display:none" class="active-banner">
+        <div>
+          <div class="active-banner-info">⚡ Entrenamiento en curso</div>
+          <div style="font-size:11px;color:var(--accent-text);margin-top:2px" id="banner-session-name"></div>
+        </div>
+        <div class="active-banner-time" id="timer-display">00:00</div>
+      </div>
+      <div id="stats-row" class="stats-row" style="display:none">
+        <div class="stat-card"><div class="stat-val" id="stat-ejercicios">0</div><div class="stat-lbl">Ejercicios</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-series">0</div><div class="stat-lbl">Series</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-vol">0</div><div class="stat-lbl">Vol kg</div></div>
+      </div>
+      <div id="session-content"></div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div id="page-historico" class="page">
+      <div class="page-header"><span class="page-title">Histórico</span></div>
+      <div class="search-wrap">
+        <input class="search-input" type="search" id="hist-search" placeholder="Buscar sesión o ejercicio..." oninput="renderHistorico()">
+      </div>
+      <div id="hist-content"></div>
+    </div>
+
+    <!-- EJERCICIOS -->
+    <div id="page-ejercicios" class="page">
+      <div class="page-header">
+        <span class="page-title">Ejercicios</span>
+        <button class="btn btn-accent btn-sm" onclick="openAddExerciseCatalog()">+ Nuevo</button>
+      </div>
+      <div class="search-wrap">
+        <input class="search-input" type="search" id="exer-search" placeholder="Buscar..." oninput="renderEjerciciosList()">
+      </div>
+      <div id="ejercicios-list"></div>
+    </div>
+
+    <!-- PANEL ENTRENADOR -->
+    <div id="page-trainer" class="page">
+      <div class="page-header">
+        <span class="page-title">Panel entrenador</span>
+        <button class="btn btn-accent btn-sm" onclick="openNewClient()">+ Cliente</button>
+      </div>
+      <div id="trainer-content"></div>
+    </div>
+  </div>
+
+  <nav class="nav" id="main-nav">
+    <button class="nav-item active" onclick="showPage('sesiones',this)"><span class="nav-icon">🏋️</span><span>Sesiones</span></button>
+    <button class="nav-item" onclick="showPage('historico',this)"><span class="nav-icon">📅</span><span>Histórico</span></button>
+    <button class="nav-item" onclick="showPage('ejercicios',this)"><span class="nav-icon">📋</span><span>Ejercicios</span></button>
+    <button class="nav-item" id="trainer-nav-btn" style="display:none" onclick="showPage('trainer',this)"><span class="nav-icon">👤</span><span>Clientes</span></button>
+  </nav>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal"><div class="modal-handle"></div><div id="modal-body"></div></div>
+</div>
+
+<script>
+// ── CONSTANTS ──
+const TRAINER_SLUG = "trainer";
+const TRAINER_KEY  = "gt_trainer_clients_v1"; // list of clients + their session templates
+const CLIENT_KEY   = (slug) => `gt_client_${slug}_v1`; // per-client: {sessions, exercises, history, active}
+
+const DEFAULT_EXERCISES = ["ADD","BAYESIAN FLYS","CABALLERO","CONT MAQ","CRUCES POLEA","CURL BI BANC","CURL EZ","CURL ESTRICTO","CURL HAMMER","CURL MANC BANCO","CURL MANC DE PIE LENTAS","CURL POL","CURL UNI POL","CUELLO","DEL LAT MÁQUINA","DELTOIDES LATERA UNI","DELTOIDES POSTERIOR","DELTOIDE ANT POL BANC","DOM","DOM LIBRES","EXTENSION","EXT DISCOS TUMB","EXT POL BANCO","EXT TRIC UNI BANC","EXT UNI POL","FEM SENT","FEM TUMB","FEMORAL TUMB UNI","FONDOS HAMM","GEM DE PIE UNI","GEM HACK","GEM UNI","GEMELO HACK","GEMELO PLACAS","GEMELO PRENSA","HACK","HIP THRUST MAQ","JALÓN ERGO","JALÓN ERGO CERR","JALON PRO","JALON UNI","JEFF","KAT","KATANA UNI","MARTILLO POL","MULTI 30","PENDULAR","PENDULAR SENT","PESO MUERTO","PESO MUERTO MAQ","PRESS HAM INC","PRESS INC HAMM","PRESS INC MANC","PRESS INC MULTI 30","PRESS PLANO DE PIE","PRESS PLANO MAQ","PRESS PLANO MANC","PRESS PLANO TUMBADO","PRESS TUMBADO MAQ","PRENSA","PULL OVER UNI POL","REMO AGARRES BI","REMO BI IND","REMO MAQ","REMO NEU ANCHO","REMO T","REMO UNI APO","REMO UNI GIRO","SKULL MANC BANCO","EXT TRIC SENT BANC","EXTENSIÓN TRIC BANCO","CUERDA TRAS NUCA","ELEV LAT JEFF"].sort();
+
+// ── HELPERS ──
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function slugify(s){return s.toLowerCase().trim().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}
+function getBaseUrl(){return window.location.href.split('?')[0]}
+
+// ── URL SLUG ──
+function getSlug(){
+  const p = new URLSearchParams(window.location.search);
+  return p.get('cliente') || p.get('c') || '';
+}
+function setSlug(slug){
+  const url = getBaseUrl()+'?cliente='+encodeURIComponent(slug);
+  window.history.replaceState({},'',url);
+}
+
+// ── STATE ──
+let slug = '';
+let isTrainer = false;
+let sessions  = [];
+let history   = [];
+let exercises = [];
+let active    = null;
+let activeSessionId = null;
+let timerInterval = null;
+let trainerClients = []; // [{slug,name,sessions:[{id,name,short,exercises:[{name}]}]}]
+
+function saveClientData(){
+  save(CLIENT_KEY(slug),{sessions,exercises,history,active,activeSessionId});
+}
+
+function loadClientData(s){
+  const d = load(CLIENT_KEY(s), null);
+  if(d){
+    sessions         = d.sessions || [];
+    exercises        = d.exercises || [...DEFAULT_EXERCISES];
+    history          = d.history || [];
+    active           = d.active || null;
+    activeSessionId  = d.activeSessionId || (sessions[0]?.id || null);
+  } else {
+    sessions         = [];
+    exercises        = [...DEFAULT_EXERCISES];
+    history          = [];
+    active           = null;
+    activeSessionId  = null;
+  }
+}
+
+// ── BOOT ──
+function boot(){
+  trainerClients = load(TRAINER_KEY, []);
+  slug = getSlug();
+
+  if(!slug){
+    document.getElementById("selector-screen").style.display = "flex";
+    document.getElementById("selector-input").addEventListener("keydown", e=>{ if(e.key==="Enter") goToClient(); });
+    return;
+  }
+
+  if(slug === TRAINER_SLUG){
+    isTrainer = true;
+    document.getElementById("main-app").style.display = "flex";
+    document.getElementById("trainer-nav-btn").style.display = "flex";
+    document.getElementById("trainer-badge").style.display = "block";
+    document.getElementById("client-greeting").textContent = "Panel";
+    document.getElementById("client-label").textContent = "Vista entrenador";
+    // Load trainer's own data too for sessions tab
+    loadClientData("__trainer__");
+    if(!sessions.length) initTrainerSessions();
+    renderSessions();
+    renderTrainerPanel();
+    return;
+  }
+
+  // Client view
+  loadClientData(slug);
+  const clientInfo = trainerClients.find(c=>c.slug===slug);
+  const displayName = clientInfo ? clientInfo.name : slug;
+
+  // If client has no sessions yet, load from trainer template
+  if(!sessions.length && clientInfo && clientInfo.sessions.length){
+    sessions = clientInfo.sessions.map(s=>({...s, exercises: s.exercises.map(e=>({name:e.name,series:[]}))}));
+    exercises = [...DEFAULT_EXERCISES];
+    saveClientData();
+  }
+
+  document.getElementById("main-app").style.display = "flex";
+  document.getElementById("client-greeting").textContent = displayName;
+  document.getElementById("client-label").textContent = "Tu entrenamiento";
+  if(active) startTimer();
+  renderSessions();
+}
+
+function initTrainerSessions(){
+  sessions = [
+    {id:"ts1",name:"Espalda · Bíceps",short:"ESP·BIC",exercises:[]},
+    {id:"ts2",name:"Pierna 1",short:"PIERNA 1",exercises:[]},
+    {id:"ts3",name:"Pectoral · Tríceps",short:"PEC·TRIC",exercises:[]},
+  ];
+  activeSessionId = sessions[0].id;
+  saveClientData();
+}
+
+function goToClient(){
+  const val = document.getElementById("selector-input")?.value.trim();
+  if(!val) return;
+  const s = slugify(val);
+  if(!s) return;
+  setSlug(s);
+  document.getElementById("selector-screen").style.display = "none";
+  slug = s;
+  boot();
+}
+
+// ── NAV ──
+function showPage(p, btn){
+  document.querySelectorAll(".page").forEach(el=>el.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(el=>el.classList.remove("active"));
+  document.getElementById("page-"+p).classList.add("active");
+  if(btn) btn.classList.add("active");
+  if(p==="sesiones")   renderSessions();
+  if(p==="historico")  renderHistorico();
+  if(p==="ejercicios") renderEjerciciosList();
+  if(p==="trainer")    renderTrainerPanel();
+}
+
+// ── SESSIONS ──
+function renderSessions(){
+  const scroll = document.getElementById("session-scroll");
+  if(!sessions.length){
+    scroll.innerHTML = "";
+    document.getElementById("session-content").innerHTML = `<div class="empty"><span class="empty-icon">📋</span><p>Tu entrenador aún no ha configurado<br>tus sesiones</p></div>`;
+    document.getElementById("stats-row").style.display = "none";
+    document.getElementById("active-banner").style.display = "none";
+    return;
+  }
+  if(!activeSessionId || !sessions.find(x=>x.id===activeSessionId)) activeSessionId = sessions[0].id;
+  scroll.innerHTML = sessions.map(s=>{
+    const isActive = s.id===activeSessionId;
+    return `<div style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0">
+      <div class="session-chip${isActive?' active':''}" onclick="selectSession('${s.id}')">${s.short}</div>
+      ${isActive?`<button class="session-edit-btn" onclick="openRenameSession('${s.id}')">✏️</button>`:''}
+    </div>`;
+  }).join("");
+  renderSessionContent();
+}
+
+function selectSession(id){activeSessionId=id;saveClientData();renderSessions();}
+
+function getLastLog(sessionId){
+  const logs=history.filter(h=>h.sessionId===sessionId);
+  if(!logs.length) return null;
+  return logs.sort((a,b)=>b.date-a.date)[0];
+}
+
+function renderSessionContent(){
+  const sess=sessions.find(x=>x.id===activeSessionId);
+  if(!sess){document.getElementById("session-content").innerHTML="";return;}
+  const isActive=active&&active.sessionId===activeSessionId;
+  const workingExercises=isActive?active.exercises:sess.exercises;
+  const lastLog=getLastLog(activeSessionId);
+
+  const banner=document.getElementById("active-banner");
+  const bannerName=document.getElementById("banner-session-name");
+  if(isActive){banner.style.display="flex";bannerName.textContent=sess.name;startTimer();}
+  else{banner.style.display="none";clearInterval(timerInterval);}
+
+  const statsRow=document.getElementById("stats-row");
+  if(isActive&&workingExercises.length){
+    const ts=workingExercises.reduce((t,e)=>t+(e.series?.length||0),0);
+    const tv=workingExercises.reduce((t,e)=>t+(e.series||[]).reduce((a,sr)=>a+(parseFloat(sr.peso)||0)*(parseInt(sr.reps)||0),0),0);
+    statsRow.style.display="grid";
+    document.getElementById("stat-ejercicios").textContent=workingExercises.length;
+    document.getElementById("stat-series").textContent=ts;
+    document.getElementById("stat-vol").textContent=tv>=1000?(tv/1000).toFixed(1)+"k":Math.round(tv);
+  } else statsRow.style.display="none";
+
+  const content=document.getElementById("session-content");
+
+  if(!isActive){
+    let html="";
+    if(lastLog){
+      const d=new Date(lastLog.date);
+      const dStr=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+      html+=`<div class="last-ref"><div class="last-ref-label">📅 Última vez — ${dStr}</div>
+        <div class="last-ref-content">${lastLog.exercises.map(e=>`<strong style="color:var(--text)">${e.name}</strong>: ${e.series.map(s=>s.peso+"kg×"+s.reps).join(', ')}`).join('<br>')}</div></div>`;
+    }
+    html+=`<div class="empty" style="padding:2rem 1rem"><span class="empty-icon">▶️</span>
+      <p>${lastLog?'Listo para superar la última sesión':'Empieza tu primera sesión'}</p></div>
+    <button class="finish-btn" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border2)" onclick="startWorkout('${activeSessionId}')">▶ Iniciar entrenamiento</button>`;
+    content.innerHTML=html; return;
+  }
+
+  let html="";
+  workingExercises.forEach((e,ei)=>{
+    const lastExer=lastLog?.exercises.find(x=>x.name===e.name);
+    const lastBestVol=lastExer?Math.max(...lastExer.series.map(s=>(parseFloat(s.peso)||0)*(parseInt(s.reps)||0))):null;
+    html+=`<div class="exer-block">
+      <div class="exer-header">
+        <span class="exer-title" onclick="goToExerciseHistory('${e.name}')">${e.name}</span>
+        <button class="swap-btn" onclick="openSwap(${ei})">⇄</button>
+        <button class="btn-icon" onclick="removeActiveExercise(${ei})">🗑️</button>
+      </div>
+      <table class="series-table"><thead><tr>
+        <th>#</th><th>Peso</th><th>Reps</th><th>${lastExer?'vs última':''}</th><th></th>
+      </tr></thead><tbody>`;
+    if((!e.series||!e.series.length)&&lastExer){
+      lastExer.series.forEach((ls,li)=>{
+        html+=`<tr class="ref-row"><td>${li+1}</td><td colspan="3">↩ ${ls.peso}kg × ${ls.reps} reps (anterior)</td><td></td></tr>`;
+      });
+    }
+    (e.series||[]).forEach((sr,si)=>{
+      let badge="";
+      if(lastBestVol!==null){
+        const v=(parseFloat(sr.peso)||0)*(parseInt(sr.reps)||0);
+        if(v>lastBestVol) badge=`<span class="serie-badge badge-pr">↑ PR</span>`;
+        else if(v===lastBestVol) badge=`<span class="serie-badge badge-eq">= igual</span>`;
+        else badge=`<span class="serie-badge badge-down">↓</span>`;
+      }
+      html+=`<tr><td class="serie-num">${si+1}</td>
+        <td><span class="serie-peso">${sr.peso}</span> <span style="font-size:11px;color:var(--text3)">kg</span></td>
+        <td><span class="serie-reps">${sr.reps} reps</span></td>
+        <td>${badge}</td>
+        <td><button class="btn-icon" onclick="removeActiveSerie(${ei},${si})" style="font-size:14px">✕</button></td></tr>`;
+    });
+    const defPeso=e.series?.length?e.series[e.series.length-1].peso:(lastExer?.series[0]?.peso||'');
+    const defReps=e.series?.length?e.series[e.series.length-1].reps:(lastExer?.series[0]?.reps||'');
+    html+=`</tbody></table>
+      <div class="add-serie-wrap"><div class="add-serie-form">
+        <input type="number" id="peso-${ei}" placeholder="kg" step="0.5" min="0" inputmode="decimal" value="${defPeso}">
+        <input type="number" id="reps-${ei}" placeholder="reps" min="1" inputmode="numeric" value="${defReps}">
+        <button class="btn btn-accent btn-sm" onclick="addActiveSerie(${ei})">+ Serie</button>
+      </div>
+      ${e.series?.length?`<div class="last-hint">Última: <strong>${e.series[e.series.length-1].peso}kg × ${e.series[e.series.length-1].reps} reps</strong></div>`:''}
+      </div></div>`;
+  });
+  html+=`<button class="add-exer-btn" onclick="openAddExerciseToActive()">+ Añadir ejercicio</button>`;
+  html+=`<button class="finish-btn" onclick="confirmFinish()">✅ Finalizar entrenamiento</button>`;
+  content.innerHTML=html;
+}
+
+// ── WORKOUT LIFECYCLE ──
+function startWorkout(sessionId){
+  const sess=sessions.find(x=>x.id===sessionId);
+  if(!sess) return;
+  const lastLog=getLastLog(sessionId);
+  const baseEx=lastLog?lastLog.exercises.map(e=>({name:e.name,series:[]})):sess.exercises.map(e=>({name:e.name,series:[]}));
+  active={sessionId,sessionName:sess.name,startTs:Date.now(),exercises:baseEx};
+  saveClientData();renderSessions();
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(!active) return;
+    const e=Math.floor((Date.now()-active.startTs)/1000);
+    const m=String(Math.floor(e/60)).padStart(2,'0'),s=String(e%60).padStart(2,'0');
+    const el=document.getElementById("timer-display");
+    if(el) el.textContent=m+":"+s;
+  },1000);
+}
+
+function confirmFinish(){
+  const ts=active.exercises.reduce((t,e)=>t+(e.series?.length||0),0);
+  const tv=active.exercises.reduce((t,e)=>t+(e.series||[]).reduce((a,sr)=>a+(parseFloat(sr.peso)||0)*(parseInt(sr.reps)||0),0),0);
+  const elapsed=Math.floor((Date.now()-active.startTs)/1000);
+  const m=Math.floor(elapsed/60),s=elapsed%60;
+  openModal(`<h3>Finalizar entrenamiento</h3>
+    <div class="confirm-box"><strong>${active.sessionName}</strong><br>
+      ⏱ Duración: <strong>${m}min ${s}s</strong><br>
+      💪 Series: <strong>${ts}</strong><br>
+      🏋️ Volumen: <strong>${Math.round(tv)} kg</strong>
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">¿Guardar y cerrar el entrenamiento?</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Seguir</button>
+      <button class="btn btn-accent" onclick="finishWorkout()">Guardar ✓</button>
+    </div>`);
+}
+
+function finishWorkout(){
+  if(!active) return;
+  const elapsed=Math.floor((Date.now()-active.startTs)/1000);
+  const log={id:Date.now().toString(),sessionId:active.sessionId,sessionName:active.sessionName,date:Date.now(),duration:elapsed,exercises:active.exercises.filter(e=>e.series?.length>0)};
+  const sess=sessions.find(x=>x.id===active.sessionId);
+  if(sess) sess.exercises=active.exercises.map(e=>({name:e.name,series:[]}));
+  history.unshift(log);
+  active=null;
+  clearInterval(timerInterval);
+  saveClientData();closeModal();renderSessions();
+}
+
+function addActiveSerie(ei){
+  if(!active||!active.exercises[ei]) return;
+  const peso=document.getElementById("peso-"+ei)?.value;
+  const reps=document.getElementById("reps-"+ei)?.value;
+  if(!peso||!reps) return;
+  if(!active.exercises[ei].series) active.exercises[ei].series=[];
+  active.exercises[ei].series.push({peso:parseFloat(peso),reps:parseInt(reps)});
+  saveClientData();renderSessionContent();
+}
+function removeActiveSerie(ei,si){if(!active||!active.exercises[ei])return;active.exercises[ei].series.splice(si,1);saveClientData();renderSessionContent();}
+function removeActiveExercise(ei){if(!active)return;if(!confirm("¿Eliminar este ejercicio?"))return;active.exercises.splice(ei,1);saveClientData();renderSessionContent();}
+
+// ── EXERCISE / SWAP MODALS ──
+function openAddExerciseToActive(){
+  const opts=exercises.map(e=>`<option value="${e}">${e}</option>`).join("");
+  openModal(`<h3>Añadir ejercicio</h3><label>Ejercicio</label><select id="m-exer">${opts}</select>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-accent" onclick="confirmAddActiveExercise()">Añadir</button></div>`);
+}
+function confirmAddActiveExercise(){
+  const name=document.getElementById("m-exer")?.value;
+  if(!name||!active)return;
+  active.exercises.push({name,series:[]});saveClientData();closeModal();renderSessionContent();
+}
+function openSwap(ei){
+  const cur=active?.exercises[ei]?.name||"";
+  const opts=exercises.map(e=>`<option value="${e}"${e===cur?" selected":""}>${e}</option>`).join("");
+  openModal(`<h3>Cambiar ejercicio</h3>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:.75rem">Actual: <strong style="color:var(--text2)">${cur}</strong></p>
+    <label>Nuevo ejercicio</label><select id="m-swap">${opts}</select>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-accent" onclick="confirmSwap(${ei})">Cambiar</button></div>`);
+}
+function confirmSwap(ei){
+  const name=document.getElementById("m-swap")?.value;
+  if(!name||!active)return;
+  active.exercises[ei].name=name;active.exercises[ei].series=[];saveClientData();closeModal();renderSessionContent();
+}
+function openRenameSession(id){
+  const s=sessions.find(x=>x.id===id);if(!s)return;
+  openModal(`<h3>Renombrar sesión</h3>
+    <label>Nombre corto (chip)</label><input type="text" id="m-short" value="${s.short}" style="text-transform:uppercase">
+    <label>Nombre completo</label><input type="text" id="m-name" value="${s.name}">
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-accent" onclick="confirmRenameSession('${id}')">Guardar</button></div>`);
+  setTimeout(()=>document.getElementById("m-short")?.focus(),100);
+}
+function confirmRenameSession(id){
+  const s=sessions.find(x=>x.id===id);
+  const short=document.getElementById("m-short")?.value.trim().toUpperCase();
+  const name=document.getElementById("m-name")?.value.trim();
+  if(!s||!short||!name)return;
+  s.short=short;s.name=name;saveClientData();closeModal();renderSessions();
+}
+
+// ── HISTÓRICO ──
+function goToExerciseHistory(name){
+  document.querySelectorAll(".nav-item").forEach(el=>el.classList.remove("active"));
+  document.querySelectorAll(".nav-item")[1].classList.add("active");
+  document.querySelectorAll(".page").forEach(el=>el.classList.remove("active"));
+  document.getElementById("page-historico").classList.add("active");
+  document.getElementById("hist-search").value=name;renderHistorico();
+}
+function renderHistorico(){
+  const q=(document.getElementById("hist-search")?.value||"").toLowerCase();
+  const container=document.getElementById("hist-content");
+  if(!history.length){container.innerHTML=`<div class="empty"><span class="empty-icon">📅</span><p>Aquí aparecerán tus entrenamientos finalizados</p></div>`;return;}
+  const filtered=history.filter(h=>{if(!q)return true;if(h.sessionName.toLowerCase().includes(q))return true;return h.exercises.some(e=>e.name.toLowerCase().includes(q));});
+  if(!filtered.length){container.innerHTML=`<div class="empty"><span class="empty-icon">🔍</span><p>Sin resultados para "${q}"</p></div>`;return;}
+  let html="";
+  filtered.forEach(log=>{
+    const d=new Date(log.date);
+    const dStr=d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+    const tv=log.exercises.reduce((t,e)=>t+(e.series||[]).reduce((a,sr)=>a+(parseFloat(sr.peso)||0)*(parseInt(sr.reps)||0),0),0);
+    const ts=log.exercises.reduce((t,e)=>t+(e.series?.length||0),0);
+    const m=Math.floor((log.duration||0)/60),s=(log.duration||0)%60;
+    const prevLog=history.filter(h=>h.sessionId===log.sessionId&&h.date<log.date).sort((a,b)=>b.date-a.date)[0]||null;
+    html+=`<div class="hist-session-entry">
+      <div class="hse-header"><div><div class="hse-date">${dStr}</div><div class="hse-session">${log.sessionName}</div></div>
+        <button class="btn-icon" onclick="deleteLog('${log.id}')">🗑️</button></div>
+      <div class="hse-stats"><span>⏱ <strong>${m}min ${s}s</strong></span><span>💪 <strong>${ts}</strong> series</span><span>🏋️ <strong>${Math.round(tv)} kg</strong></span></div>
+      <div class="hse-exercises">${log.exercises.map(e=>{
+        const prevEx=prevLog?.exercises.find(x=>x.name===e.name);
+        const myMax=e.series.length?Math.max(...e.series.map(s=>(parseFloat(s.peso)||0)*(parseInt(s.reps)||0))):0;
+        const pvMax=prevEx?.series.length?Math.max(...prevEx.series.map(s=>(parseFloat(s.peso)||0)*(parseInt(s.reps)||0))):null;
+        let delta="";
+        if(pvMax!==null){if(myMax>pvMax)delta=` <span style="color:var(--success);font-size:10px">↑PR</span>`;else if(myMax<pvMax)delta=` <span style="color:var(--danger);font-size:10px">↓</span>`;}
+        return `<div class="hse-exer"><div class="hse-exer-name">${e.name}${delta}</div>
+          <div class="hse-series">${e.series.map(s=>`<span class="hse-serie">${s.peso}kg×${s.reps}</span>`).join("")}</div></div>`;
+      }).join("")}</div></div>`;
+  });
+  container.innerHTML=html;
+}
+function deleteLog(id){if(!confirm("¿Eliminar este registro?"))return;history=history.filter(h=>h.id!==id);saveClientData();renderHistorico();}
+
+// ── EJERCICIOS ──
+function renderEjerciciosList(){
+  const q=(document.getElementById("exer-search")?.value||"").toLowerCase();
+  const filtered=exercises.filter(e=>e.toLowerCase().includes(q));
+  const list=document.getElementById("ejercicios-list");
+  if(!filtered.length){list.innerHTML=`<div class="empty"><span class="empty-icon">🔍</span><p>Sin resultados</p></div>`;return;}
+  list.innerHTML=filtered.map(e=>`<div class="exer-list-item">
+    <span class="exer-list-name">${e}</span>
+    <div style="display:flex;gap:4px">
+      <button class="btn-icon" onclick="goToExerciseHistory('${e}')">📈</button>
+      <button class="btn-icon" onclick="deleteExercise('${e}')">🗑️</button>
+    </div></div>`).join("");
+}
+function deleteExercise(name){if(!confirm(`¿Eliminar "${name}"?`))return;exercises=exercises.filter(e=>e!==name);saveClientData();renderEjerciciosList();}
+function openAddExerciseCatalog(){
+  openModal(`<h3>Nuevo ejercicio</h3><label>Nombre</label>
+    <input type="text" id="m-new-name" placeholder="Ej: Press banca inclinado" style="text-transform:uppercase">
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-accent" onclick="confirmNewExercise()">Añadir</button></div>`);
+  setTimeout(()=>document.getElementById("m-new-name")?.focus(),100);
+}
+function confirmNewExercise(){
+  const name=document.getElementById("m-new-name")?.value.trim().toUpperCase();
+  if(!name)return;
+  if(!exercises.includes(name))exercises.push(name);
+  exercises.sort();saveClientData();closeModal();renderEjerciciosList();
+}
+
+// ── TRAINER PANEL ──
+// ── TRAINER PANEL ──────────────────────────────────────────
+let editingClient = null; // slug of client being edited in detail view
+
+function renderTrainerPanel(){
+  const container=document.getElementById("trainer-content");
+  if(editingClient){
+    renderClientEditor(editingClient);
+    return;
+  }
+  if(!trainerClients.length){
+    container.innerHTML=`<div class="empty"><span class="empty-icon">👤</span><p>Aún no has añadido clientes.<br>Pulsa "+ Cliente" para empezar.</p></div>`;
+    return;
+  }
+  let html="";
+  trainerClients.forEach(c=>{
+    const url=`${getBaseUrl()}?cliente=${encodeURIComponent(c.slug)}`;
+    const totalEx=(c.sessions||[]).reduce((t,s)=>t+(s.exercises||[]).length,0);
+    html+=`<div class="client-card">
+      <div class="client-card-header">
+        <span class="client-name">${c.name}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="openClientEditor('${c.slug}')">✏️ Editar</button>
+          <button class="btn-icon" onclick="deleteClient('${c.slug}')">🗑️</button>
+        </div>
+      </div>
+      <div class="client-url" onclick="copyUrl('${url}')" title="Toca para copiar">🔗 ${url}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+        <div class="client-sessions">${(c.sessions||[]).map(s=>`<span class="client-session-tag">${s.short}</span>`).join("")}</div>
+        <span style="font-size:11px;color:var(--text3)">${totalEx} ejercicios</span>
+      </div>
+    </div>`;
+  });
+  container.innerHTML=html;
+}
+
+function renderClientEditor(sl){
+  const c=trainerClients.find(x=>x.slug===sl);
+  if(!c){editingClient=null;renderTrainerPanel();return;}
+  const container=document.getElementById("trainer-content");
+  let html=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
+      <button class="btn btn-ghost btn-sm" onclick="exitClientEditor()">← Volver</button>
+      <span style="font-size:16px;font-weight:700">${c.name}</span>
+    </div>
+    <div style="margin-bottom:1rem">
+      <div class="client-url" onclick="copyUrl('${getBaseUrl()}?cliente=${encodeURIComponent(c.slug)}')" title="Toca para copiar">🔗 ${getBaseUrl()}?cliente=${encodeURIComponent(c.slug)}</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+      <p class="section-label" style="margin:0">Sesiones y ejercicios</p>
+      <button class="btn btn-accent btn-sm" onclick="openAddSessionToClient('${sl}')">+ Sesión</button>
+    </div>`;
+
+  if(!c.sessions||!c.sessions.length){
+    html+=`<div class="empty" style="padding:1.5rem"><span class="empty-icon">📋</span><p>Sin sesiones. Añade la primera.</p></div>`;
+  } else {
+    c.sessions.forEach((s,si)=>{
+      html+=`<div class="exer-block">
+        <div class="exer-header" style="background:var(--surface2)">
+          <span style="flex:1;font-size:13px;font-weight:700">${s.short} <span style="color:var(--text3);font-weight:400">· ${s.name}</span></span>
+          <button class="swap-btn" onclick="openRenameClientSession('${sl}',${si})">✏️</button>
+          <button class="btn-icon" onclick="deleteClientSession('${sl}',${si})" style="font-size:15px">🗑️</button>
+        </div>
+        <div style="padding:8px 14px">
+          ${(s.exercises||[]).map((e,ei)=>`
+            <div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);gap:8px">
+              <span style="flex:1;font-size:13px">${e.name}</span>
+              <button class="btn-icon" onclick="deleteClientExercise('${sl}',${si},${ei})" style="font-size:14px">✕</button>
+            </div>`).join("")}
+          <button class="add-exer-btn" style="margin-top:8px" onclick="openAddExToClientSession('${sl}',${si})">+ Añadir ejercicio</button>
+        </div>
+      </div>`;
+    });
+  }
+  container.innerHTML=html;
+}
+
+function openClientEditor(sl){
+  editingClient=sl;
+  renderTrainerPanel();
+}
+function exitClientEditor(){
+  editingClient=null;
+  renderTrainerPanel();
+}
+
+function openAddSessionToClient(sl){
+  openModal(`<h3>Nueva sesión</h3>
+    <label>Nombre corto (chip)</label>
+    <input type="text" id="m-sshort" placeholder="Ej: PEC·TRIC" style="text-transform:uppercase">
+    <label>Nombre completo</label>
+    <input type="text" id="m-sname" placeholder="Ej: Pectoral · Tríceps">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-accent" onclick="confirmAddSessionToClient('${sl}')">Añadir</button>
+    </div>`);
+  setTimeout(()=>document.getElementById("m-sshort")?.focus(),100);
+}
+
+function confirmAddSessionToClient(sl){
+  const c=trainerClients.find(x=>x.slug===sl);
+  const short=document.getElementById("m-sshort")?.value.trim().toUpperCase();
+  const name=document.getElementById("m-sname")?.value.trim();
+  if(!c||!short||!name)return;
+  if(!c.sessions)c.sessions=[];
+  c.sessions.push({id:'s'+Date.now(),short,name,exercises:[]});
+  save(TRAINER_KEY,trainerClients);closeModal();renderClientEditor(sl);
+}
+
+function openRenameClientSession(sl,si){
+  const c=trainerClients.find(x=>x.slug===sl);
+  const s=c?.sessions[si];if(!s)return;
+  openModal(`<h3>Renombrar sesión</h3>
+    <label>Nombre corto</label>
+    <input type="text" id="m-rshort" value="${s.short}" style="text-transform:uppercase">
+    <label>Nombre completo</label>
+    <input type="text" id="m-rname" value="${s.name}">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-accent" onclick="confirmRenameClientSession('${sl}',${si})">Guardar</button>
+    </div>`);
+}
+
+function confirmRenameClientSession(sl,si){
+  const c=trainerClients.find(x=>x.slug===sl);
+  const short=document.getElementById("m-rshort")?.value.trim().toUpperCase();
+  const name=document.getElementById("m-rname")?.value.trim();
+  if(!c||!short||!name)return;
+  c.sessions[si].short=short;c.sessions[si].name=name;
+  save(TRAINER_KEY,trainerClients);closeModal();renderClientEditor(sl);
+}
+
+function deleteClientSession(sl,si){
+  const c=trainerClients.find(x=>x.slug===sl);
+  if(!c||!confirm("¿Eliminar esta sesión?"))return;
+  c.sessions.splice(si,1);
+  save(TRAINER_KEY,trainerClients);renderClientEditor(sl);
+}
+
+function openAddExToClientSession(sl,si){
+  const opts=DEFAULT_EXERCISES.map(e=>`<option value="${e}">${e}</option>`).join("");
+  openModal(`<h3>Añadir ejercicio</h3>
+    <label>Buscar ejercicio</label>
+    <input type="search" id="m-exsearch" placeholder="Filtrar..." oninput="filterTrainerExOptions()" style="margin-bottom:6px">
+    <select id="m-exsel" size="6" style="height:160px">${opts}</select>
+    <label>O escribe uno nuevo</label>
+    <input type="text" id="m-exnew" placeholder="Nombre del ejercicio" style="text-transform:uppercase">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-accent" onclick="confirmAddExToClientSession('${sl}',${si})">Añadir</button>
+    </div>`);
+  setTimeout(()=>document.getElementById("m-exsearch")?.focus(),100);
+}
+
+function filterTrainerExOptions(){
+  const q=(document.getElementById("m-exsearch")?.value||"").toLowerCase();
+  const sel=document.getElementById("m-exsel");
+  if(!sel)return;
+  sel.innerHTML=DEFAULT_EXERCISES.filter(e=>e.toLowerCase().includes(q)).map(e=>`<option value="${e}">${e}</option>`).join("");
+}
+
+function confirmAddExToClientSession(sl,si){
+  const c=trainerClients.find(x=>x.slug===sl);
+  if(!c||!c.sessions[si])return;
+  const newName=document.getElementById("m-exnew")?.value.trim().toUpperCase();
+  const selName=document.getElementById("m-exsel")?.value;
+  const name=newName||selName;
+  if(!name)return;
+  if(!c.sessions[si].exercises)c.sessions[si].exercises=[];
+  if(c.sessions[si].exercises.find(e=>e.name===name)){alert("Ya está en esta sesión");return;}
+  c.sessions[si].exercises.push({name});
+  save(TRAINER_KEY,trainerClients);closeModal();renderClientEditor(sl);
+}
+
+function deleteClientExercise(sl,si,ei){
+  const c=trainerClients.find(x=>x.slug===sl);
+  if(!c)return;
+  c.sessions[si].exercises.splice(ei,1);
+  save(TRAINER_KEY,trainerClients);renderClientEditor(sl);
+}
+
+function openNewClient(){
+  openModal(`<h3>Nuevo cliente</h3>
+    <label>Nombre del cliente</label>
+    <input type="text" id="m-cname" placeholder="Ej: María García">
+    <p style="font-size:11px;color:var(--text3);margin-top:.75rem">Después de crearlo podrás añadir sus sesiones y ejercicios.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-accent" onclick="confirmNewClient()">Crear</button>
+    </div>`);
+  setTimeout(()=>document.getElementById("m-cname")?.focus(),100);
+}
+
+function confirmNewClient(){
+  const name=document.getElementById("m-cname")?.value.trim();
+  if(!name)return;
+  const sl=slugify(name);
+  if(trainerClients.find(c=>c.slug===sl)){alert("Ya existe un cliente con ese nombre");return;}
+  trainerClients.push({slug:sl,name,sessions:[]});
+  save(TRAINER_KEY,trainerClients);closeModal();
+  openClientEditor(sl);
+}
+
+function deleteClient(sl){
+  if(!confirm(`¿Eliminar cliente? No se borra su historial en su dispositivo.`))return;
+  trainerClients=trainerClients.filter(c=>c.slug!==sl);
+  save(TRAINER_KEY,trainerClients);renderTrainerPanel();
+}
+
+function copyUrl(url){
+  navigator.clipboard.writeText(url).then(()=>{
+    alert("✓ URL copiada");
+  }).catch(()=>{ alert("URL: "+url); });
+}
+
+// ── MODAL ──
+function openModal(html){document.getElementById("modal-body").innerHTML=html;document.getElementById("modal-overlay").classList.add("open");}
+function closeModal(){document.getElementById("modal-overlay").classList.remove("open");}
+function handleOverlayClick(e){if(e.target===document.getElementById("modal-overlay"))closeModal();}
+
+boot();
+</script>
+</body>
+</html>
